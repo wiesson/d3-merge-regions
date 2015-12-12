@@ -2,18 +2,23 @@
 <meta charset="utf-8">
 <style>
 
-    .state {
+    .regions {
         fill: #ccc;
     }
 
-    .state-boundary {
-        fill: none;
-        stroke: #fff;
+    .region-boundary {
+        fill: #ccc;
+        stroke: #ccc;
     }
 
-    .state.selected {
+    .regions.selected {
         fill: orange;
-        stroke: #000;
+        stroke: orange;
+    }
+
+    .regions.selected:hover {
+        fill: lightblue;
+        stroke: lightblue;
     }
 
 </style>
@@ -22,46 +27,56 @@
 <script src="//d3js.org/topojson.v1.min.js"></script>
 <script>
 
-    var width = 960,
-            height = 600;
+    var w = window, d = document, e = d.documentElement, g = d.getElementsByTagName('body')[0], x = w.innerWidth || e.clientWidth || g.clientWidth, y = w.innerHeight || e.clientHeight || g.clientHeight;
+    var width = x - 100;
+    height = y - 100;
 
-    var projection = d3.geo.albersUsa()
-            .scale(1280)
-            .translate([width / 2, height / 2]);
+    var projection = d3.geo.mercator()
+            .scale((width + 1) / 2 / Math.PI)
+            .translate([width / 2, height / 2])
+            .precision(.1);
 
     var path = d3.geo.path()
             .projection(projection);
 
     var svg = d3.select("body").append("svg")
+            .attr("id", "baseSvg")
             .attr("width", width)
             .attr("height", height);
 
-    var selected = d3.set([
-        9, 10, 12, 13, 17, 18, 19, 21, 23, 24,
-        25, 26, 29, 31, 33, 34, 36, 37, 39, 42,
-        44, 45, 47, 50, 51, 54, 55
-    ]);
+    var WE = d3.set(["BEL", "CHE", "DEU", "ESP", "FRA", "GBR", "IRL", "ITA", "LUX", "NLD", "PRT"]);
 
-    d3.json("lib/us.json", function (error, us) {
+    var NE = d3.set(["DNK", "FIN", "NOR", "SWE"]);
+
+    d3.json("lib/world.json", function (error, world) {
         if (error) throw error;
 
+        console.log(world);
+
         svg.append("path")
-                .datum(topojson.feature(us, us.objects.states))
-                .attr("class", "state")
+                .datum(topojson.feature(world, world.objects.subunits))
+                .attr("class", "regions")
                 .attr("d", path);
 
         svg.append("path")
-                .datum(topojson.mesh(us, us.objects.states, function (a, b) {
+                .datum(topojson.mesh(world, world.objects.subunits, function (a, b) {
                     return a !== b;
                 }))
-                .attr("class", "state-boundary")
+                .attr("class", "region-boundary")
                 .attr("d", path);
 
         svg.append("path")
-                .datum(topojson.merge(us, us.objects.states.geometries.filter(function (d) {
-                    return selected.has(d.id);
+                .datum(topojson.merge(world, world.objects.subunits.geometries.filter(function (d) {
+                    return WE.has(d.id);
                 })))
-                .attr("class", "state selected")
+                .attr("class", "regions selected")
+                .attr("d", path);
+
+        svg.append("path")
+                .datum(topojson.merge(world, world.objects.subunits.geometries.filter(function (d) {
+                    return NE.has(d.id);
+                })))
+                .attr("class", "regions selected")
                 .attr("d", path);
     });
 
