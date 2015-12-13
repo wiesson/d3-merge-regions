@@ -20,69 +20,44 @@
         stroke-width: 1px;
     }
 
-    div.tooltip {
-        color: #222;
-        background-color: #fff;
-        padding: .5em;
-        text-shadow: #f5f5f5 0 1px 0;
-        border-radius: 2px;
-        opacity: 0.9;
-        position: absolute;
-    }
-
-    .container {
-        background: #222;
-        display: flex;
-    }
-
-    .view {
-        flex: 1;
-    }
-
-    .view:last-child {
-        flex: 6;
-    }
-
 </style>
 <body>
 
-<div class="container">
-    <div class="view">
-        <ul>
-            <li><a href="#">1</a></li>
-            <li><a href="#">2</a></li>
-            <li><a href="#">3</a></li>
-            <li><a href="#">4</a></li>
-            <li><a href="#">5</a></li>
-        </ul>
-    </div>
-    <div class="view" id="map"></div>
-
-</div>
-
+<div id="map"></div>
 
 <script src="bower_components/d3/d3.min.js"></script>
 <script src="bower_components/topojson/topojson.js"></script>
-
+<script src="//d3js.org/queue.v1.min.js"></script>
 <script>
-    d3.select(window).on("resize", resize);
 
-    var width = document.querySelector('#map').offsetWidth;
-    var mapRatio = 1;
-    var height = width * mapRatio;
+    var width = 960,
+            height = 500;
 
-    var projection = d3.geo.mercator().scale(width / 2 / Math.PI)
-            .translate([(width) / 2, height / 2])
-            .precision(.1);
+    var projection = d3.geo.orthographic()
+            .scale(250)
+            .translate([width / 2, height / 2])
+            .clipAngle(90);
 
-    var path = d3.geo.path().projection(projection);
+    var path = d3.geo.path()
+            .projection(projection);
 
-    var svg = d3.select("#map")
-            .append("svg")
-            .attr("preserveAspectRatio", "xMinYMin")
+    var λ = d3.scale.linear()
+            .domain([0, width])
+            .range([-180, 180]);
+
+    var φ = d3.scale.linear()
+            .domain([0, height])
+            .range([90, -90]);
+
+    var svg = d3.select("body").append("svg")
             .attr("width", width)
-            .attr("height", height)
-            .append("g");
+            .attr("height", height);
+
+    svg.on("mousemove", function() {
+        var p = d3.mouse(this);
+        projection.rotate([λ(p[0]), φ(p[1])]);
+        svg.selectAll("path").attr("d", path);
+    });
 
     var sets = [
         d3.set(['BEL', 'CHE', 'DEU', 'AUT', 'ESP', 'FRA', 'ATF', 'GBR', 'GGY', 'JEY', 'FLK', 'SGS', 'GRC', 'MLT', 'IRL', 'ITA', 'LUX', 'NLD', 'AND', 'POL', 'PRT', 'TUR', 'CYP', 'CYN', 'MON', 'ALD', 'IMN', 'LTU', 'LVA', 'EST', 'BLR', 'UKR', 'MDA', 'ROU', 'HUN', 'SVK', 'SVN', 'HRV', 'BIH', 'CZE', 'BGR', 'KOS', 'MKD', 'ALB', 'MNE', 'SRB']),
@@ -98,7 +73,7 @@
         d3.set(['BTN', 'CHN', 'JPN', 'IDN', 'MNG', 'NPL', 'MMR', 'THA', 'KHM', 'LAO', 'VNM', 'PRK', 'KOR', 'TWN', 'MYS', 'PNG', 'SLB', 'VUT', 'NCL', 'BRN', 'PHL', 'TLS', 'HKG', 'FJI', 'GUM', 'PLW', 'FSM', 'MNP', 'KAS'])
     ];
 
-    d3.json("lib/countries.json", function (error, w) {
+    d3.json("lib/countries.json", function(error, w) {
         if (error) throw error;
 
         svg.append("path").datum(topojson.merge(w, w.objects.units.geometries.filter(function (d) {
@@ -114,25 +89,6 @@
                     .attr("class", "regions selected")
                     .attr("d", path);
         }
-
     });
-
-    function resize() {
-        // adjust things when the window size changes
-
-        width = document.querySelector('#map').offsetWidth;
-        // width = width - margin.left - margin.right;
-        height = width * mapRatio;
-
-        // update projection
-        projection.scale(width / 2 / Math.PI).translate([width / 2, height / 2]).precision(.1);
-
-        // resize the map container
-        document.querySelector('svg').setAttribute('width', width);
-        document.querySelector('svg').setAttribute('height', height);
-
-        // resize the map
-        svg.selectAll('.regions').attr('d', path);
-    }
 
 </script>
