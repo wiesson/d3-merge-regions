@@ -1,51 +1,42 @@
 <!DOCTYPE html>
+<html>
 <meta charset="utf-8">
 <style>
 
     body {
-        background: #222;
         font-family: sans-serif;
     }
 
     .border {
         fill: none;
-        stroke: #8a4c0b;
+        stroke: #222;
         stroke-width: 2px;
     }
 
     .regions.selected {
-        fill: #222;
+        fill: #fff;
         stroke: none;
         transition: all 0.2s ease;
     }
 
-    .regions.selected:hover {
-        fill: #8a4c0b;
-        stroke: #8a4c0b;
-        stroke-width: 2px;
-    }
-
-    div.tooltip {
-        color: #222;
-        background-color: #fff;
-        padding: .5em;
-        text-shadow: #f5f5f5 0 1px 0;
-        border-radius: 2px;
-        opacity: 0.9;
-        position: absolute;
+    .regions.selected:hover, .regions.active {
+        fill: #ff8b17;
+        stroke: none;
+        stroke-width: 0px;
     }
 
     .container {
-        background: #222;
+        margin: 0 auto;
+        max-width: 1260px;
         display: flex;
     }
 
-    .view {
-        flex: 1;
+    .item {
+        flex: 1
     }
 
-    .view:last-child {
-        flex: 6;
+    .item.map {
+        flex: 3
     }
 
     .legend {
@@ -56,22 +47,18 @@
 </style>
 <body>
 
-<div class="view" id="map"></div>
 
-<!-- <div class="container">
-    <div class="view">
+<div class="container">
+    <div class="item legend">
         <ul>
-            <li><a href="#">1</a></li>
-            <li><a href="#">2</a></li>
-            <li><a href="#">3</a></li>
-            <li><a href="#">4</a></li>
-            <li><a href="#">5</a></li>
         </ul>
     </div>
+    <div class="item map">
+        <div class="view" id="map"></div>
+    </div>
+</div>
 
-</div> -->
 <div class="legend"></div>
-
 
 <script src="bower_components/d3/d3.min.js"></script>
 <script src="bower_components/topojson/topojson.js"></script>
@@ -84,6 +71,7 @@
     var height = width * mapRatio;
 
     var projection = d3.geo.mercator().scale(width / 2 / Math.PI)
+            .rotate([-11.25, 0])
             .translate([(width) / 2, height * 1.35 / 2])
             .precision(.1);
 
@@ -98,7 +86,7 @@
 
     var sets = [
         {
-            name: 'Western Europe',
+            name: 'Central Europe',
             set: d3.set(['BEL', 'CHE', 'DEU', 'AUT', 'ESP', 'FRA', 'ATF', 'GBR', 'GGY', 'JEY', 'FLK', 'SGS', 'GRC', 'MLT', 'IRL', 'ITA', 'LUX', 'NLD', 'AND', 'POL', 'PRT', 'TUR', 'CYP', 'CYN', 'MON', 'ALD', 'IMN', 'LTU', 'LVA', 'EST', 'BLR', 'UKR', 'MDA', 'ROU', 'HUN', 'SVK', 'SVN', 'HRV', 'BIH', 'CZE', 'BGR', 'KOS', 'MKD', 'ALB', 'MNE', 'SRB']),
         },
         {
@@ -159,19 +147,30 @@
                     .attr('class', "regions selected")
                     .attr("d", path)
                     .attr({'data-name': sets[i].name})
-                    .on('mouseover', function () {
-                        var region = d3.select(this);
-                        document.querySelector('.legend').innerText = region.attr('data-name');
-                    }).on('mouseout', function () {
-                        document.querySelector('.legend').innerText = '';
-                    });
+                    .attr({'data-id': 'p' + i});
+
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            a.setAttribute('href', '#');
+            a.setAttribute('data-id', 'p' + i);
+            a.innerText = sets[i].name;
+            li.appendChild(a);
+            document.querySelector('.item.legend ul').appendChild(li);
         }
 
+        var divs = d3.select('.legend').selectAll("a");
+        divs.on('mouseover', function () {
+            var region = d3.select('path[data-id=' + this.getAttribute('data-id') + ']');
+            region.attr('class', 'regions active');
+        });
+        divs.on('mouseout', function () {
+            var region = d3.select('path[data-id=' + this.getAttribute('data-id') + ']');
+            region.attr('class', 'regions selected');
+        });
     });
 
     function resize() {
         // adjust things when the window size changes
-
         width = document.querySelector('#map').offsetWidth;
         // width = width - margin.left - margin.right;
         height = width * mapRatio;
@@ -185,7 +184,9 @@
         document.querySelector('svg').setAttribute('height', height);
 
         // resize the map
-        svg.selectAll('.regions').attr('d', path);
+        svg.selectAll('.regions, .border').attr('d', path);
     }
 
 </script>
+</body>
+</html>
